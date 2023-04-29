@@ -4,6 +4,24 @@ import sys
 import time
 import datetime
 from pygame.locals import *
+import random
+
+def message(data):
+
+	message = data
+
+	# setting a font object
+	font1 = pg.font.Font(None, 30)
+
+	# setting the font properties like
+	# color and width of the text
+	text = font1.render(message, 1, (255, 255, 255))
+
+	# copy the rendered message onto the board
+	# creating a small block at the bottom of the main display
+	#text_rect = text.get_rect(center=(width / 2, 500-50))
+	screen.fill((0, 0, 0), (0, 430, 500, 50))
+	screen.blit(text, (140, 440))
 
 # declaring the global variables
 class Player():
@@ -42,7 +60,8 @@ p2 = Player('o', 120)
 
 # for storing the 'x' or 'o'
 # value as character
-XO = 'x'
+players = ['x','o']
+XO = random.choice(players)
 
 winner = None
 draw = None
@@ -51,6 +70,7 @@ height = 400
 white = (255, 255, 255)
 line_color = (0, 0, 0)
 board = [[None]*3, [None]*3, [None]*3]
+total_seconds = 5
 
 pg.init()
 
@@ -59,7 +79,7 @@ CLOCK = pg.time.Clock()
 
 screen = pg.display.set_mode((width, height + 100), 0, 32)
 
-pg.display.set_caption("Jogo da velha com Semáforos")
+pg.display.set_caption("Jogo da Velha com Semáforos")
 
 # loading the images as python object
 initiating_window = pg.image.load("modified_cover.png")
@@ -77,12 +97,14 @@ def game_initiating_window():
 
 	# displaying over the screen
 	screen.blit(initiating_window, (0, 0))
-
+	
 	# updating the display
 	pg.display.update()
 	time.sleep(3)
-	screen.fill(white)
 
+	screen.fill(white)
+	screen.fill((0, 0, 0), (0, 400, 500, 100))
+	
 	pg.draw.line(screen, line_color, (width / 3, 0), (width / 3, height), 7)
 	pg.draw.line(screen, line_color, (width / 3 * 2, 0), (width / 3 * 2, height), 7)
 
@@ -91,42 +113,31 @@ def game_initiating_window():
 
 	draw_status()
 
+
 def draw_timer(total_seconds):
 	timer = datetime.timedelta(seconds = total_seconds)
-	font = pg.font.Font(None, 30)
-	message = f'Time left {timer.seconds}'
-	text = font.render(message, 1, (255, 255, 255))
-	screen.fill((0, 0, 0), (0, 400, 500, 100))
-	text_rect = text.get_rect(center=(width / 2, 500-50))
-	screen.blit(text, text_rect)
+	font = pg.font.Font(None, 20)
+	message_timer = f'Tempo restante {timer.seconds}'
+	text_timer = font.render(message_timer, 2, (255, 255, 255))
+	screen.fill((0, 0, 0), (0, 400, 500, 30))
+	#timer_rect = text_timer.get_rect(center=(60, 420)) 
+	screen.blit(text_timer, (10, 415))
 	pg.display.update()
-
 
 def draw_status():
 
 	# getting the global variable draw
 	# into action
 	global draw
-	
+
 	if winner is None:
-		message = f'{XO.upper()} + s Turn'
+		data = "Turno do " + XO.upper()
 	else:
-		message = winner.upper() + " won !"
+		data = winner.upper() + " ganhou!"
 	if draw:
-		message = "Game Draw !"
+		data = "Empate!"
 
-	# setting a font object
-	font = pg.font.Font(None, 30)
-
-	# setting the font properties like
-	# color and width of the text
-	text = font.render(message, 1, (255, 255, 255))
-
-	# copy the rendered message onto the board
-	# creating a small block at the bottom of the main display
-	screen.fill((0, 0, 0), (0, 400, 500, 100))
-	text_rect = text.get_rect(center=(width / 2, 500-50))
-	screen.blit(text, text_rect)
+	message(data)
 	pg.display.update()
 
 
@@ -170,7 +181,7 @@ def check_win():
 
 
 def drawXO(row, col):
-	global board, XO
+	global board, XO, total_seconds
 
 
 	if row == 1:
@@ -194,10 +205,12 @@ def drawXO(row, col):
 	board[row-1][col-1] = XO
 
 	if(XO == 'x'):
+		total_seconds = 5
 		screen.blit(x_img, (posy, posx))
 		XO = 'o'
 
 	else:
+		total_seconds = 5
 		screen.blit(o_img, (posy, posx))
 		XO = 'x'
 
@@ -205,7 +218,6 @@ def drawXO(row, col):
 
 
 def user_click():
-
 	x, y = pg.mouse.get_pos()
 	if(x < width / 3):
 		col = 1
@@ -239,12 +251,13 @@ def user_click():
 
 
 def reset_game():
-	global board, winner, XO, draw
-	time.sleep(3)
-	XO = 'x'
+	global board, winner, XO, draw, total_seconds
+	time.sleep(2)
+	total_seconds = 5
+	XO = random.choice(players)
 	draw = False
-	game_initiating_window()
 	winner = None
+	game_initiating_window()
 	board = [[None]*3, [None]*3, [None]*3]
 
 
@@ -258,9 +271,20 @@ while(True):
 		elif event.type == 1025:
 			user_click()
 			if(winner or draw):
-				reset_game()
-	
-	pg.display.update()
-	total_seconds -= (1/30)
+				reset_game()	
+	pg.display.update() 
+	total_seconds -= 1/30
+	if  total_seconds < 0:
+		total_seconds = 0
+		if XO == 'x':
+			XO = 'o'
+			winner = 'o'
+			draw_status()
+			reset_game()
+		else:
+			XO = 'x'
+			winner = 'x'
+			draw_status()
+			reset_game()
 	draw_timer(total_seconds)
 	CLOCK.tick(fps)
