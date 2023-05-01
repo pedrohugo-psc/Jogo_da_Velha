@@ -49,6 +49,16 @@ def signal(semaforo):
 players = ['x','o']
 XO = random.choice(players)
 
+s00 = Semaforo()
+s01 = Semaforo()
+s02 = Semaforo()
+s10 = Semaforo()
+s11 = Semaforo()
+s12 = Semaforo()
+s20 = Semaforo()
+s21 = Semaforo()
+s22 = Semaforo()
+
 winner = None
 draw = None
 width = 400
@@ -56,6 +66,18 @@ height = 400
 white = (255, 255, 255)
 line_color = (0, 0, 0)
 board = [[None]*3, [None]*3, [None]*3]
+semaforos = { 
+'00': s00, 
+'01': s01,
+'02': s02, 
+'10': s10,
+'11': s11,
+'12': s12, 
+'20': s20, 
+'21': s21, 
+'22': s22
+}
+
 total_seconds = 5
 
 pg.init()
@@ -230,11 +252,23 @@ def user_click():
 		row = None
 
 
-	if(row and col and board[row-1][col-1] is None):
-		global XO
-		drawXO(row, col)
-		check_win()
+	if( row and col):
+		id = str(row-1) + str(col-1)
+		if( wait(semaforos[id])):
+			global XO
+			drawXO(row, col)
+			check_win()
 
+def draw_game_over_screen():
+	screen.fill((0, 0, 0))
+	font = pg.font.SysFont('arial', 40)
+	title = font.render('Game Over', True, (255, 255, 255))
+	restart_button = font.render('R - Restart', True, (255, 255, 255))
+	quit_button = font.render('Q - Quit', True, (255, 255, 255))
+	screen.blit(title, (width/2 - title.get_width()/2, height/2 - title.get_height()/3))
+	screen.blit(restart_button, (width/2 - restart_button.get_width()/2, width/1.9 + restart_button.get_height()))
+	screen.blit(quit_button, (width/2 - quit_button.get_width()/2, width/2 + quit_button.get_height()/2))
+	pg.display.update()
 
 def reset_game():
 	global board, winner, XO, draw, total_seconds
@@ -245,10 +279,11 @@ def reset_game():
 	winner = None
 	game_initiating_window()
 	board = [[None]*3, [None]*3, [None]*3]
-
+	for semaforo in semaforos:
+		signal(semaforos[semaforo])
 
 game_initiating_window()
-
+game_state = "game"
 while(True):
 	for event in pg.event.get():
 		if event.type == pg.QUIT:
@@ -257,20 +292,35 @@ while(True):
 		elif event.type == 1025:
 			user_click()
 			if(winner or draw):
-				reset_game()	
-	pg.display.update() 
-	total_seconds -= 1/30
-	if  total_seconds < 0:
-		total_seconds = 0
-		if XO == 'x':
-			XO = 'o'
-			winner = 'o'
-			draw_status()
+				time.sleep(2)
+				draw_game_over_screen()
+				game_state = 'game_over'	
+	if game_state == "game_over":
+		keys = pg.key.get_pressed()
+		if keys[pg.K_r]:
+			game_state = "game"
 			reset_game()
-		else:
-			XO = 'x'
-			winner = 'x'
-			draw_status()
-			reset_game()
-	draw_timer(total_seconds)
+		if keys[pg.K_q]:
+			pg.quit()
+			quit()
+	if game_state == "game":
+		pg.display.update() 
+		total_seconds -= 1/30
+		if  total_seconds < 0:
+			total_seconds = 0
+			if XO == 'x':
+				XO = 'o'
+				winner = 'o'
+				draw_status()
+				game_state = "game_over"
+				time.sleep(1)
+				draw_game_over_screen()
+			else:
+				XO = 'x'
+				winner = 'x'
+				draw_status()
+				game_state = "game_over"
+				time.sleep(1)
+				draw_game_over_screen()
+		draw_timer(total_seconds)
 	CLOCK.tick(fps)
