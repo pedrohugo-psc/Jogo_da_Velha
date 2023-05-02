@@ -290,7 +290,8 @@ while(True):
 			pg.quit()
 			sys.exit()
 		elif event.type == 1025:
-			user_click()
+			if game_state == "game":
+				user_click()
 			if(winner or draw):
 				time.sleep(2)
 				draw_game_over_screen()
